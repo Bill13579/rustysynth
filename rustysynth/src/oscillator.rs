@@ -173,14 +173,14 @@ impl Oscillator {
             if distance_to_next_sample.round() as u64 == 1 {
                 index1 += 1;
             }
-            let mut index2 = index1/* + 1*/;
 
-            if index2 >= self.end_loop as usize {
-                index2 -= loop_length as usize;
+            if index1 >= self.end_loop as usize {
+                index1 -= loop_length as usize;
             }
+            // let index2 = index1/* + 1*/;
 
             let x1 = data[index1] as i64;
-            let x2 = data[index2] as i64;
+            let x2 = data[index1] as i64;
             let a_fp = self.position_fp & (Oscillator::FRAC_UNIT - 1);
             *sample = Oscillator::FP_TO_SAMPLE
                 * ((x1 << Oscillator::FRAC_BITS) + a_fp * (x2 - x1)) as f32;
