@@ -113,7 +113,19 @@ impl Oscillator {
         let block_length = block.len();
 
         for t in 0..block_length {
-            let index = (self.position_fp >> Oscillator::FRAC_BITS) as usize;
+            let mut index = (self.position_fp >> Oscillator::FRAC_BITS) as usize;
+            
+            let distance_to_next_sample = (((self.position_fp as u64) << (64-Oscillator::FRAC_BITS)) >> (64-Oscillator::FRAC_BITS)) as f64 / Oscillator::FRAC_UNIT as f64;
+            if distance_to_next_sample.round() as u64 == 1 {
+                index += 1;
+            }
+            // println!("{:064b} {:064b} {:064b} {} {}"
+            // , self.position_fp
+            // , (self.position_fp as u64) << (64-Oscillator::FRAC_BITS)
+            // , ((self.position_fp as u64) << (64-Oscillator::FRAC_BITS)) >> (64-Oscillator::FRAC_BITS)
+            // , ((self.position_fp as u64) << (64-Oscillator::FRAC_BITS)) >> (64-Oscillator::FRAC_BITS)
+            // , distance_to_next_sample);
+            // println!("{}", distance_to_next_sample.round() as u64);
 
             if index >= self.end as usize {
                 if t > 0 {
@@ -127,7 +139,7 @@ impl Oscillator {
             }
 
             let x1 = data[index] as i64;
-            let x2 = data[index + 1] as i64;
+            let x2 = data[index] as i64; // Use the same index for `x2` so the interpolation becomes a no-op
             let a_fp = self.position_fp & (Oscillator::FRAC_UNIT - 1);
             block[t] = Oscillator::FP_TO_SAMPLE
                 * ((x1 << Oscillator::FRAC_BITS) + a_fp * (x2 - x1)) as f32;
@@ -156,8 +168,12 @@ impl Oscillator {
                 self.position_fp -= loop_length_fp;
             }
 
-            let index1 = (self.position_fp >> Oscillator::FRAC_BITS) as usize;
-            let mut index2 = index1 + 1;
+            let mut index1 = (self.position_fp >> Oscillator::FRAC_BITS) as usize;
+            let distance_to_next_sample = (((self.position_fp as u64) << (64-Oscillator::FRAC_BITS)) >> (64-Oscillator::FRAC_BITS)) as f64 / Oscillator::FRAC_UNIT as f64;
+            if distance_to_next_sample.round() as u64 == 1 {
+                index1 += 1;
+            }
+            let mut index2 = index1/* + 1*/;
 
             if index2 >= self.end_loop as usize {
                 index2 -= loop_length as usize;
